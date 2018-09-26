@@ -3,7 +3,7 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 
-xxx resize image : failing to install
+from skimage.transform import resize
 
 from sklearn.model_selection import train_test_split
 
@@ -32,16 +32,12 @@ def upsample(img):
     if img_size_ori == img_size_target:
         return img
     return resize(img, (img_size_target, img_size_target), mode='constant', preserve_range=True)
-    # res = np.zeros((img_size_target, img_size_target), dtype=img.dtype)
-    # res[:img_size_ori, :img_size_ori] = img
-    # return res
 
 
 def downsample(img):
     if img_size_ori == img_size_target:
         return img
     return resize(img, (img_size_ori, img_size_ori), mode='constant', preserve_range=True)
-    # return img[:img_size_ori, :img_size_ori]
 
 
 data_home = "../../salt_data"
@@ -56,6 +52,17 @@ train_df["images"] = [np.array(load_img(data_home + "/train/images/{}.png".forma
                                                                                         for idx in tqdm(train_df.index)]
 train_df["masks"] = [np.array(load_img(data_home + "/train/masks/{}.png".format(idx),color_mode="grayscale" )) / 255
                                                                                         for idx in tqdm(train_df.index)]
+
+train_df["coverage"] = train_df.masks.map(np.sum) / pow(img_size_ori, 2)
+
+
+def cov_to_class(val):
+    for i in range(0, 11):
+        if val * 10 <= i:
+            return i
+
+
+train_df["coverage_class"] = train_df.coverage.map(cov_to_class)
 
 
 ids_train, ids_valid, x_train, x_valid, y_train, y_valid, cov_train, cov_test, depth_train, depth_test = \
