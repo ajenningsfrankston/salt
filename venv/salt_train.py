@@ -160,8 +160,37 @@ history = model.fit(x_train, y_train,
                     callbacks=[early_stopping, model_checkpoint, reduce_lr])
 
 
+# Predict the validation set to do a sanity check
+# Again plot some sample images including the predictions.
+
+
+preds_valid = model.predict(x_valid).reshape(-1, img_size_target, img_size_target)
+preds_valid = np.array([downsample(x) for x in preds_valid])
+y_valid_ori = np.array([train_df.loc[idx].masks for idx in ids_valid])
+max_images = 60
+grid_width = 15
+grid_height = int(max_images / grid_width)
+fig, axs = plt.subplots(grid_height, grid_width, figsize=(grid_width, grid_height))
+for i, idx in enumerate(ids_valid[:max_images]):
+    img = train_df.loc[idx].images
+    mask = train_df.loc[idx].masks
+    pred = preds_valid[i]
+    ax = axs[int(i / grid_width), i % grid_width]
+    ax.imshow(img, cmap="Greys")
+    ax.imshow(mask, alpha=0.3, cmap="Greens")
+    ax.imshow(pred, alpha=0.3, cmap="OrRd")
+    ax.text(1, img_size_ori-1, train_df.loc[idx].z, color="black")
+    ax.text(img_size_ori - 1, 1, round(train_df.loc[idx].coverage, 2), color="black", ha="right", va="top")
+    ax.text(1, 1, train_df.loc[idx].coverage_class, color="black", ha="left", va="top")
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+plt.suptitle("Green: salt, Red: prediction. Top-left: coverage class, top-right: salt coverage, bottom-left: depth")
+
+
+
 
 # src: https://www.kaggle.com/aglotero/another-iou-metric
+
 def iou_metric(y_true_in, y_pred_in, print_table=False):
     labels = y_true_in
     y_pred = y_pred_in
@@ -234,9 +263,9 @@ def RLenc(img, order='F', format=True):
     returns run length as an array or string (if format is True)
     """
     bytes = img.reshape(img.shape[0] * img.shape[1], order=order)
-    runs = []  ## list of run lengths
-    r = 0  ## the current run length
-    pos = 1  ## count starts from 1 per WK
+    runs = []  # list of run lengths
+    r = 0   # the current run length
+    pos = 1  # count starts from 1 per WK
     for c in bytes:
         if (c == 0):
             if r != 0:
@@ -263,7 +292,7 @@ def RLenc(img, order='F', format=True):
         return runs
 
 
-x_test = np.array([upsample(np.array(load_img("../input/test/images/{}.png".format(idx), grayscale=True))) / 255
+x_test = np.array([upsample(np.array(load_img(data_home + "/test/images/{}.png".format(idx), grayscale=True))) / 255
                             for idx in tqdm(test_df.index)]).reshape(-1, img_size_target, img_size_target, 1)
 
 preds_test = model.predict(x_test)
@@ -271,6 +300,6 @@ pred_dict = {idx: RLenc(np.round(downsample(preds_test[i]) > threshold_best)) fo
 sub = pd.DataFrame.from_dict(pred_dict,orient='index')
 sub.index.names = ['id']
 sub.columns = ['rle_mask']
-sub.to_csv('submission.csv')
+sub.to_csv('../../salt_predictions/submission.csv')
 
 
