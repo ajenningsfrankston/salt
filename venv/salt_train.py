@@ -184,9 +184,9 @@ for i, idx in enumerate(ids_valid[:max_images]):
     ax.text(1, 1, train_df.loc[idx].coverage_class, color="black", ha="left", va="top")
     ax.set_yticklabels([])
     ax.set_xticklabels([])
+
 plt.suptitle("Green: salt, Red: prediction. Top-left: coverage class, top-right: salt coverage, bottom-left: depth")
-
-
+plt.show()
 
 
 # src: https://www.kaggle.com/aglotero/another-iou-metric
@@ -292,7 +292,7 @@ def RLenc(img, order='F', format=True):
         return runs
 
 
-x_test = np.array([upsample(np.array(load_img(data_home + "/test/images/{}.png".format(idx), grayscale=True))) / 255
+x_test = np.array([upsample(np.array(load_img(data_home + "/test/images/{}.png".format(idx), color_mode="grayscale"))) / 255
                             for idx in tqdm(test_df.index)]).reshape(-1, img_size_target, img_size_target, 1)
 
 preds_test = model.predict(x_test)
